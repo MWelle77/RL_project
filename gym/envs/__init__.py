@@ -1,5 +1,13 @@
 from gym.envs.registration import registry, register, make, spec
 
+# Custom
+# ----------------------------------------
+register(
+    id='Yumi-Simple-v0',
+    max_episode_steps=100,
+    entry_point='gym.envs.mujoco:YumiEnvSimple',
+)
+
 # Algorithmic
 # ----------------------------------------
 
@@ -206,6 +214,20 @@ register(
 register(
     id='Reacher-v1',
     entry_point='gym.envs.mujoco:ReacherEnv',
+    max_episode_steps=50,
+    reward_threshold=-3.75,
+)
+
+register(
+    id='ReachHer-v0',
+    entry_point='gym.envs.mujoco:ReachHerEnv',
+    max_episode_steps=50,
+    reward_threshold=-3.75,
+)
+
+register(
+    id='ReachHerBinary-v0',
+    entry_point='gym.envs.mujoco:ReachHerBinaryEnv',
     max_episode_steps=50,
     reward_threshold=-3.75,
 )
