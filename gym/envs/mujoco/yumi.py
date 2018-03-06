@@ -144,8 +144,10 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
 
         # Child class
         self.controller = YumiController()
-        self.low = np.array([-0.15, -0.15, 0.0])
-        self.high = np.array([0.15, 0.15, 0.1])
+        #self.low = np.array([-0.15, -0.15, 0.0])
+        #self.high = np.array([0.15, 0.15, 0.1])
+        self.low=-np.ones(7)
+        self.high=-self.low
         utils.EzPickle.__init__(self)
         self.frame_skip = frame_skip
 
@@ -164,9 +166,7 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         a : np.array([x, y, z])
         """
         a = np.clip(a, self.low, self.high)
-        for t in range(self.frame_skip):
-            u = self.controller(self.model, a)
-            self.do_simulation(u, 1)
+        self.do_simulation(a, 1)
         ob = self._get_obs()
         reward = self.reward(a)
         done = False
