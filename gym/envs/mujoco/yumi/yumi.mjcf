@@ -141,6 +141,7 @@
         </body>
     </worldbody>
 
+    
     <actuator>
         <velocity joint="yumi_joint_1_r" ctrlrange="-200.0 200.0" ctrllimited="true" kv="100"/>
         <velocity joint="yumi_joint_2_r" ctrlrange="-20.0 20.0" ctrllimited="true" kv="100"/>
