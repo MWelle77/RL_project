@@ -16,7 +16,7 @@ print("action lower bound")
 print(env.action_space.low)
 
 
-print("observationspace:  jointpos [")
+print("observationspace:  jointpos [1, 2, 7, 3, 4, 5, 6], jointvel [1, 2, 7, 3, 4, 5, 6], EEpos [x, y, z],EEquts [x y z w] ")
 print(env.observation_space)
 print("observationspace upper bound")
 print(env.observation_space.high)
