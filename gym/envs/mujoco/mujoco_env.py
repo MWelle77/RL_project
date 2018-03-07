@@ -49,6 +49,8 @@ class MujocoEnv(gym.Env):
         low = -high
         self.observation_space = spaces.Box(low, high)
 
+        
+
         self._seed()
 
     def _seed(self, seed=None):

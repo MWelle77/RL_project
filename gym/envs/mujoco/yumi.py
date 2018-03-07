@@ -9,6 +9,7 @@ from mujoco_py.mjlib import mjlib
 import numpy as np
 from gym import utils, spaces
 from gym.envs.mujoco import mujoco_env
+import random
 
 
 class MujocoSpecial(gym.Env):
@@ -142,14 +143,21 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         model_path = os.path.join(os.path.dirname(file_path), 'yumi', 'yumi.xml')
         super(YumiEnvSimple, self).__init__(model_path, frame_skip=1)
 
-        # Child class
-        self.controller = YumiController()
-        #self.low = np.array([-0.15, -0.15, 0.0])
-        #self.high = np.array([0.15, 0.15, 0.1])
-        self.low=-np.ones(7)
-        self.high=-self.low
+        # Child class        
+        bounds = self.model.actuator_ctrlrange.copy()
+        low = bounds[:, 0]
+        high = bounds[:, 1]
+        self.low=low
+        self.high=high
         utils.EzPickle.__init__(self)
         self.frame_skip = frame_skip
+
+        #set up evil force
+        self._adv_bindex = body_index(self.model,'gripper_r_finger_l')
+        self.adv_max_force = 1.
+        #high_adv = np.ones(2)*adv_max_force
+        #low_adv = -high_adv
+        #self.adv_action_space = spaces.Box(low_adv, high_adv)
 
     @property
     def observation_space(self):
@@ -161,11 +169,18 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
     def action_space(self):
         return gym.spaces.Box(self.low, self.high)
 
+    #evil force
+    def _adv_to_xfrc(self, adv_act):
+        new_xfrc = self.model.data.xfrc_applied*0.0
+        new_xfrc[self._adv_bindex] = np.array([adv_act[0], adv_act[1], adv_act[2], adv_act[3], adv_act[4], adv_act[5]])
+        self.model.data.xfrc_applied = new_xfrc
+
     def _step(self, a):
-        """
-        a : np.array([x, y, z])
-        """
-        a = np.clip(a, self.low, self.high)
+        #evil forces
+        randf =np.random.uniform(low=-self.adv_max_force, high=self.adv_max_force, size=(6,))
+        self._adv_to_xfrc(randf)
+        #make sure actions are inbound        
+        a = np.clip(a, self.low, self.high)        
         self.do_simulation(a, 1)
         ob = self._get_obs()
         reward = self.reward(a)
@@ -176,7 +191,7 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         self.viewer.cam.trackbodyid = -1
         self.viewer.cam.elevation = -30
         self.viewer.cam.azimuth = 180
-        self.viewer.cam.distance = 1.2
+        self.viewer.cam.distance = 1.5
         self.viewer.cam.lookat[0] = 0
         self.viewer.cam.lookat[1] = 0
         self.viewer.cam.lookat[2] = 0.2
@@ -184,34 +199,28 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
     def reset_model(self):
         qpos = self.init_qpos
         qvel = self.init_qvel
-        obj_pos = np.random.randn(2) * 0.01 + np.array([-0.05, -0.2]) + np.array([-0.05, 0.05])
-
         # separate shoulder joints to avoid initial collision
         qpos[0] = -1.0
         qpos[9] =  1.0
 
         qpos[1] = 0.3
 
-        qpos[-4:-2] = obj_pos
         self.set_state(qpos, qvel)
         return self._get_obs()
 
     def reward(self, a):
-        arm = body_pos(self.model, 'gripper_r_base')
-        obj = body_pos(self.model, 'object')
-        goal = body_pos(self.model, 'goal')
-        arm2obj = np.linalg.norm(arm - obj)
-        obj2goal = np.linalg.norm(obj[:2] - goal[:2])
-        ctrl = np.square(a).sum()
+        arm = np.concatenate([body_pos(self.model, 'gripper_r_base'),body_quat(self.model, 'gripper_r_base')])
+        goal =np.concatenate([body_pos(self.model, 'goal'),body_quat(self.model, 'goal')])
+        arm2goal = np.linalg.norm(arm - goal)
 
-        return - (1.0 * obj2goal + 0.5 * arm2obj + 0.0 * ctrl)
+        return -arm2goal
 
     def _get_obs(self):
         return np.concatenate([
             self.model.data.qpos.flat[:7],
             self.model.data.qvel.flat[:7],
-            body_pos(self.model, 'object'),
-            self.model.data.qvel[-4:-2, 0]
+            body_pos(self.model, 'gripper_r_base'),
+            body_quat(self.model, 'gripper_r_base')
         ])
 
 
@@ -239,6 +248,10 @@ def body_index(model, body_name):
 def body_pos(model, body_name):
     ind = body_index(model, body_name)
     return model.data.xpos[ind]
+
+def body_quat(model,body_name):
+    ind = body_index(model, body_name)
+    return model.data.xquat[ind]
 
 
 def rotational_axis(model, body_name, local_axis):
@@ -272,40 +285,11 @@ def jacobian_inv(model):
     return J.T @ np.linalg.inv(J @ J.T + np.eye(6) * 1e-9)
 
 
-class YumiController:
-
-    def __init__(self):
-        self.e_prev = None
-        self.Fd = np.array([[-1,  0,  0],
-                            [ 0,  1,  0],
-                            [ 0,  0, -1]])
-
-    def __call__(self, model, relative_pos):
-        rp = body_pos(model, 'object') + relative_pos
-        rp[-1] += 0.14
-        F = body_frame(model, 'gripper_r_base')
-        yp = body_pos(model, 'gripper_r_base')
-        ep = rp - yp
-        ew = 0.5 * np.cross(F.T, self.Fd.T).sum(axis=0)
-        e = np.concatenate([ep, ew]).reshape(6, 1)
-        J_inv = jacobian_inv(model)
-        if self.e_prev is None:
-            self.e_prev = e
-        de = e - self.e_prev
-        Kp = 64.0
-        Kd = 32.0
-        u = (J_inv @ (Kp * (e + Kd * de))).flatten()
-        self.e_prev = e
-        if np.max(u) > 1.0:
-            u /= np.max(u)
-        return u
-
-
 if __name__ == '__main__':
     import gym
     yumi = gym.make('Yumi-Simple-v0')
     yumi.reset()
-    a = np.array([0.0, 0.0, 0.10])
+    #a = np.array([0.0, 0.0, 0.10])
     for _ in range(1):
         yumi.reset()
         for t in range(2000):

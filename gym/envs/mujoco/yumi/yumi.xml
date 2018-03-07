@@ -128,16 +128,17 @@
             </body>
         </body>
 
-        <body name="object" pos="0.0 0.0 0.04" >
+        <!--body name="object" pos="0.0 0.0 0.04" >
             <geom rgba="0.4 0.5 0.9 1.0" type="cylinder" size="0.04 0.038 0.04" density="0.5"/>
             <joint name="obj_slidex" type="slide" pos="0 0 0" axis="1 0 0" damping="0.0005"/>
             <joint name="obj_slidey" type="slide" pos="0 0 0" axis="0 1 0" damping="0.0005"/>
-        </body>
+        </body-->
 
-        <body name="goal" pos="-0.05 -0.2 0.0">
-            <geom rgba="1 0 0 1" type="cylinder" size="0.05 0.001 0.1" density='0.00001'/>
+        <body name="goal" pos="-0.05 -0.2 0.1" quat="0 0 0 1">>
+	    <geom rgba="1 0 0 1" type="sphere" size="0.01" density='0.00001'/>
+            <!--geom rgba="1 0 0 1" type="cylinder" size="0.05 0.001 0.1" density='0.00001'/>
             <joint name="goal_slidey" type="slide" pos="0 0 0" axis="0 1 0" range="-10.3213 10.3" damping="1.0"/>
-            <joint name="goal_slidex" type="slide" pos="0 0 0" axis="1 0 0" range="-10.3213 10.3" damping="1.0"/>
+            <joint name="goal_slidex" type="slide" pos="0 0 0" axis="1 0 0" range="-10.3213 10.3" damping="1.0"/-->
         </body>
     </worldbody>
 
