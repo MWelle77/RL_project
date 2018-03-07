@@ -23,7 +23,7 @@ print(env.observation_space.high)
 print("observationspace lower bound")
 print(env.observation_space.low)
 
-for _ in range(1000): # run for 1000 steps
+for _ in range(10000): # run for 1000 steps
     env.render()
     #get info from the world
     action = np.zeros(7) #do nothing

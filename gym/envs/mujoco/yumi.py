@@ -154,7 +154,7 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
 
         #set up evil force
         self._adv_bindex = body_index(self.model,'gripper_r_finger_l')
-        self.adv_max_force = 1.
+        self.adv_max_force = 0.1
         #high_adv = np.ones(2)*adv_max_force
         #low_adv = -high_adv
         #self.adv_action_space = spaces.Box(low_adv, high_adv)
@@ -213,7 +213,7 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         goal =np.concatenate([body_pos(self.model, 'goal'),body_quat(self.model, 'goal')])
         arm2goal = np.linalg.norm(arm - goal)
 
-        return -arm2goal
+        return -arm2goal*100
 
     def _get_obs(self):
         return np.concatenate([
