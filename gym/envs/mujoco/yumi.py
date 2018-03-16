@@ -12,6 +12,8 @@ from gym.envs.mujoco import mujoco_env
 import random
 
 
+from scipy import signal
+
 class MujocoSpecial(gym.Env):
     """Special superclass for MuJoCo environments.
     """
@@ -151,10 +153,12 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         self.high=high
         utils.EzPickle.__init__(self)
         self.frame_skip = frame_skip
+        self.time=0;
 
         #set up evil force
         self._adv_bindex = body_index(self.model,'gripper_r_finger_l')
         self.adv_max_force = 0.1
+        self.randf =np.random.uniform(low=-self.adv_max_force, high=self.adv_max_force, size=(6,))*0
         #high_adv = np.ones(2)*adv_max_force
         #low_adv = -high_adv
         #self.adv_action_space = spaces.Box(low_adv, high_adv)
@@ -176,9 +180,42 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         self.model.data.xfrc_applied = new_xfrc
 
     def _step(self, a):
+        #add dt to tome
+        self.time+=self.dt
         #evil forces
-        randf =np.random.uniform(low=-self.adv_max_force, high=self.adv_max_force, size=(6,))
-        self._adv_to_xfrc(randf)
+        # Random forces
+        # =====================================================
+        self.randf =np.random.uniform(low=-self.adv_max_force, high=self.adv_max_force, size=(6,))
+        #self._adv_to_xfrc(self.randf)
+        magn =  5 * self.adv_max_force  # in case you wanna change the magnitude, maybe make it random at every episode
+        
+        # Sine forces
+        # =====================================================
+        # sinusoidal_x = magn * np.sin(10 * np.pi * self.time)
+        # sinusoidal_y = magn * np.sin(30 * np.pi * self.time)
+        # # for the time being, I;m assuming the forces are exerted only on x and
+        # # y axes (smaller freq for y) and there are no torques
+        # sine_forces = np.zeros_like(randf)
+        # sine_forces[:2] = sinusoidal_x, sinusoidal_y
+        # randf = sine_forces
+
+        # 3. Triangular forces a) from triangular distribution and b) of actual triangular shape, still only on x and y
+        # ======================================================
+        triangular_forces = np.zeros_like(self.randf)
+        # a) the distribution
+        # triangular_forces[:2] = np.random.triangular(-self.adv_max_force, 0,  self.adv_max_force, size = (2,))
+        # self.randf = triangular_forces
+
+        # b) the sawtooth function 
+        triangle_x = magn * signal.sawtooth(5 * np.pi * self.time)
+        triangle_y = 0.5*magn * signal.sawtooth(2.5 * np.pi * self.time)
+        triangular_forces =np.zeros(6)
+        triangular_forces[:2] = triangle_x, triangle_y   
+        self.randf=triangular_forces
+
+        #====apply forces==========================
+        self._adv_to_xfrc(self.randf)
+
         #make sure actions are inbound        
         a = np.clip(a, self.low, self.high)        
         self.do_simulation(a, 1)
@@ -200,13 +237,12 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         qpos = self.init_qpos
         qvel = self.init_qvel
         # separate shoulder joints to avoid initial collision
-        qpos[0] = -1.0
+        #qpos[0] = -1.0
         qpos[9] =  1.0
 
-        qpos[1] = 0.3
+        #qpos[1] = 0.3
 
-        #set inital position
-        
+        #set inital position        
         qpos[0] = 0.4097769755571825 #j_r1
         qpos[1] = -0.8696447789194206 #j_r2
         qpos[2] = -1.3862958447109897 #j_r7
@@ -215,11 +251,11 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         qpos[5] = 1.2331409655322743 #j_r5
         qpos[6] = 0.27708597056285544 #j_r6
 
-        self.set_state(qpos, qvel)
+        self.set_state(qpos, qvel*0)
         return self._get_obs()
 
     def reward(self, a):
-        arm = np.concatenate([body_pos(self.model, 'gripper_r_base'),body_quat(self.model, 'gripper_r_base')])
+        arm = np.concatenate([body_pos(self.model, 'gripper_r_finger_l'),body_quat(self.model, 'gripper_r_finger_l')])
         goal =np.concatenate([body_pos(self.model, 'goal'),body_quat(self.model, 'goal')])
         arm2goal = np.linalg.norm(arm - goal)
 
@@ -230,7 +266,8 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
             self.model.data.qpos.flat[:7],
             self.model.data.qvel.flat[:7],
             body_pos(self.model, 'gripper_r_base'),
-            body_quat(self.model, 'gripper_r_base')
+            body_quat(self.model, 'gripper_r_base'),
+            self.randf
         ])
 
 
