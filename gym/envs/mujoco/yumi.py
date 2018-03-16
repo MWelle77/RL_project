@@ -205,6 +205,16 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
 
         qpos[1] = 0.3
 
+        #set inital position
+        
+        qpos[0] = 0.4097769755571825 #j_r1
+        qpos[1] = -0.8696447789194206 #j_r2
+        qpos[2] = -1.3862958447109897 #j_r7
+        qpos[3] = 0.7371426330845399 #j_r3
+        qpos[4] = 0.38664608272307444 #j_r4
+        qpos[5] = 1.2331409655322743 #j_r5
+        qpos[6] = 0.27708597056285544 #j_r6
+
         self.set_state(qpos, qvel)
         return self._get_obs()
 
@@ -222,6 +232,7 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
             body_pos(self.model, 'gripper_r_base'),
             body_quat(self.model, 'gripper_r_base')
         ])
+
 
 
 def body_frame(model, body_name):
