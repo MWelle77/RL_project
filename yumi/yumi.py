@@ -9,6 +9,8 @@ import collections
 
 from gym import spaces
 
+
+
 #build the enviroment
 env = gym.make('Yumi-Simple-v0')
 env.reset()
@@ -41,15 +43,15 @@ print(env.observation_space.low)
     
 #     def __init__(self, learning_rate=0.01, scope="policy_estimator"):
 #         with tf.variable_scope(scope):
-#             self.state = tf.placeholder(tf.int32, [], "state")
+#             self.state = tf.placeholder(tf.int32, (7,), "state")
 #             self.action = tf.placeholder(dtype=tf.int32, name="action")
 #             self.target = tf.placeholder(dtype=tf.float32, name="target")
 
 #             # This is just table lookup estimator
-#             state_one_hot = tf.one_hot(self.state, int(env.observation_space.n))
+#             state_one_hot = tf.one_hot(self.state, int(env.observation_space.shape[0]))
 #             self.output_layer = tf.contrib.layers.fully_connected(
 #                 inputs=tf.expand_dims(state_one_hot, 0),
-#                 num_outputs=env.action_space.n,
+#                 num_outputs=env.action_space.shape[0],
 #                 activation_fn=None,
 #                 weights_initializer=tf.zeros_initializer)
 
@@ -81,11 +83,11 @@ print(env.observation_space.low)
     
 #     def __init__(self, learning_rate=0.1, scope="value_estimator"):
 #         with tf.variable_scope(scope):
-#             self.state = tf.placeholder(tf.int32, [], "state")
+#             self.state = tf.placeholder(tf.int32, (7,), "state")
 #             self.target = tf.placeholder(dtype=tf.float32, name="target")
 
 #             # This is just table lookup estimator
-#             state_one_hot = tf.one_hot(self.state, int(env.observation_space.n))
+#             state_one_hot = tf.one_hot(self.state, int(env.observation_space.shape[0]))
 #             self.output_layer = tf.contrib.layers.fully_connected(
 #                 inputs=tf.expand_dims(state_one_hot, 0),
 #                 num_outputs=1,
@@ -127,9 +129,9 @@ print(env.observation_space.low)
 #     """
 
 #     # Keeps track of useful statistics
-#     stats = plotting.EpisodeStats(
-#         episode_lengths=np.zeros(num_episodes),
-#         episode_rewards=np.zeros(num_episodes))    
+#     #stats = plotting.EpisodeStats(
+#     #    episode_lengths=np.zeros(num_episodes),
+#     #    episode_rewards=np.zeros(num_episodes))    
     
 #     Transition = collections.namedtuple("Transition", ["state", "action", "reward", "next_state", "done"])
     
@@ -144,7 +146,11 @@ print(env.observation_space.low)
             
 #             # Take a step
 #             action_probs = estimator_policy.predict(state)
-#             action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
+
+#             print(action_probs)
+#             action = np.random.choice(np.arange(len(action_probs[0])), p=action_probs[0])
+
+
 #             next_state, reward, done, _ = env.step(action)
             
 #             # Keep track of the transition
@@ -152,12 +158,12 @@ print(env.observation_space.low)
 #               state=state, action=action, reward=reward, next_state=next_state, done=done))
             
 #             # Update statistics
-#             stats.episode_rewards[i_episode] += reward
-#             stats.episode_lengths[i_episode] = t
+#             #stats.episode_rewards[i_episode] += reward
+#             #stats.episode_lengths[i_episode] = t
             
 #             # Print out which step we're on, useful for debugging.
-#             print("\rStep {} @ Episode {}/{} ({})".format(
-#                     t, i_episode + 1, num_episodes, stats.episode_rewards[i_episode - 1]), end="")
+#             #print("\rStep {} @ Episode {}/{} ({})".format(
+#             #        t, i_episode + 1, num_episodes, stats.episode_rewards[i_episode - 1]), end="")
 #             # sys.stdout.flush()
 
 #             if done:
@@ -190,9 +196,12 @@ print(env.observation_space.low)
 #     sess.run(tf.initialize_all_variables())
 #     # Note, due to randomness in the policy the number of episodes you need to learn a good
 #     # policy may vary. ~2000-5000 seemed to work well for me.
-#     stats = reinforce(env, policy_estimator, value_estimator, 2000, discount_factor=1.0)
+#     #stats = reinforce(env, policy_estimator, value_estimator, 2000, discount_factor=1.0)
+#     reinforce(env, policy_estimator, value_estimator, 2000, discount_factor=1.0)
 
 
+
+# print("DONZO")
 
 
 rewardlist=[]
@@ -215,7 +224,7 @@ for _ in range(1000): # run for 1000 steps
     env.render()
     #get info from the world
     action = np.zeros(7) #do nothing
-    #action = env.action_space.sample() # pick a random action
+    action = env.action_space.sample() # pick a random action
     #print("performing action:")
     #print(action)
     observation, reward, done, info = env.step(action)
@@ -278,7 +287,7 @@ plt.plot(foreceslist4, label="t_y")
 plt.plot(foreceslist5, label="t_z")
 plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
-plt.title('Advisary forces on right hand')
+plt.title('Adversary forces on right hand')
 plt.xlabel('episodes')
 plt.ylabel('force/torque')
 plt.show()

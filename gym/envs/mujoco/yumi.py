@@ -185,23 +185,23 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         #evil forces
         # Random forces
         # =====================================================
-        self.randf =np.random.uniform(low=-self.adv_max_force, high=self.adv_max_force, size=(6,))
+        #self.randf =np.random.uniform(low=-self.adv_max_force, high=self.adv_max_force, size=(6,))
         #self._adv_to_xfrc(self.randf)
         magn =  5 * self.adv_max_force  # in case you wanna change the magnitude, maybe make it random at every episode
         
         # Sine forces
         # =====================================================
-        # sinusoidal_x = magn * np.sin(10 * np.pi * self.time)
-        # sinusoidal_y = magn * np.sin(30 * np.pi * self.time)
+        #sinusoidal_x = magn * np.sin(5 * np.pi * self.time)
+        #sinusoidal_y = 0.5*magn * np.sin(2.5 * np.pi * self.time)
         # # for the time being, I;m assuming the forces are exerted only on x and
         # # y axes (smaller freq for y) and there are no torques
-        # sine_forces = np.zeros_like(randf)
-        # sine_forces[:2] = sinusoidal_x, sinusoidal_y
-        # randf = sine_forces
+        #sine_forces = np.zeros_like(self.randf)
+        #sine_forces[:2] = sinusoidal_x, sinusoidal_y
+        #self.randf = sine_forces
 
         # 3. Triangular forces a) from triangular distribution and b) of actual triangular shape, still only on x and y
         # ======================================================
-        triangular_forces = np.zeros_like(self.randf)
+        #triangular_forces = np.zeros_like(self.randf)
         # a) the distribution
         # triangular_forces[:2] = np.random.triangular(-self.adv_max_force, 0,  self.adv_max_force, size = (2,))
         # self.randf = triangular_forces
@@ -216,7 +216,8 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         #====apply forces==========================
         self._adv_to_xfrc(self.randf)
 
-        #make sure actions are inbound        
+        #make sure actions are inbound   
+        a     
         a = np.clip(a, self.low, self.high)        
         self.do_simulation(a, 1)
         ob = self._get_obs()
@@ -262,13 +263,18 @@ class YumiEnvSimple(MujocoSpecial, utils.EzPickle):
         return -arm2goal*100
 
     def _get_obs(self):
-        return np.concatenate([
-            self.model.data.qpos.flat[:7],
-            self.model.data.qvel.flat[:7],
-            body_pos(self.model, 'gripper_r_base'),
-            body_quat(self.model, 'gripper_r_base'),
-            self.randf
-        ])
+         return np.concatenate([
+             self.model.data.qpos.flat[:7],
+             self.model.data.qvel.flat[:7]
+         ])
+         #return np.concatenate([
+         #    self.model.data.qpos.flat[:7],
+         #    self.model.data.qvel.flat[:7],
+         #    body_pos(self.model, 'gripper_r_base'),
+         #    body_quat(self.model, 'gripper_r_base'),
+         #    self.randf
+         #])
+        #return self.model.data.qpos.flat[:7]
 
 
 
